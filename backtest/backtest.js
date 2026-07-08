@@ -3,19 +3,18 @@
 // symbols. Each day: process exits first (frees slots), then entries.
 
 import { config } from './config.js';
-import { highestClose, lowestClose, smaClose } from './strategy.js';
-import { sizePosition } from './gate.js';
 import { atrSeries } from './atr.js';
+import { decideEntry, decideExit } from './decide.js';
 
 // `strategy` (regime filter etc.) is injected so the regime sweep can vary it
 // per run; it defaults to config.strategy so existing two-arg callers are
-// unaffected.
+// unaffected. The per-day entry/exit judgement lives in decide.js and is
+// shared with the live loop; this function only orchestrates the portfolio
+// (date axis, shared equity, exits-then-entries phasing) around it.
 export function runBacktest(barsBySymbol, rules, strategy = config.strategy) {
-  const { entryLookback, exitLookback, startEquity, costBps } = config;
+  const { startEquity, costBps } = config;
   const slip = costBps / 10000;
   const useAtr = rules.stop_method === 'atr';
-  const regime = strategy.regimeFilter;
-  const useRegime = regime && regime.enabled;
 
   // Per-symbol date -> index lookup, and the union of all trading dates.
   // atrBySymbol is only populated (and only consulted) in atr mode — Wilder
@@ -42,79 +41,56 @@ export function runBacktest(barsBySymbol, rules, strategy = config.strategy) {
       const i = idx[sym].get(date);
       if (i === undefined) continue;
       const bars = barsBySymbol[sym];
+
+      const { exit, reason } = decideExit({ bars, i, position: pos });
+      if (!exit) continue;
+
       const close = bars[i].close;
-
-      const channelLow = lowestClose(bars, i, exitLookback); // trails up
-      const hitChannel = close < channelLow;
-      const hitStop = close <= pos.stopLevel; // fixed entry - 1R floor
-
-      if (hitChannel || hitStop) {
-        // In channel mode, channelLow >= stopLevel always, so a channel
-        // hit is the higher (binding/first) exit and this label is exact.
-        // In atr mode that inequality isn't guaranteed (the ATR stop can
-        // sit above or below the channel low), so when both trip the same
-        // day this label is a preference order, not a claim about which
-        // triggered "first" — the exit price (today's close) is identical
-        // either way, so pnl/retPct/rMultiple are unaffected.
-        const reason = hitChannel ? 'channel' : 'hard-stop';
-        const exitPx = close * (1 - slip);
-        const pnl = (exitPx - pos.entryPx) * pos.shares;
-        equity += pnl;
-        trades.push({
-          symbol: sym,
-          entryDate: pos.entryDate,
-          entryPx: pos.entryPx,
-          exitDate: date,
-          exitPx,
-          reason,
-          shares: pos.shares,
-          rMultiple: (exitPx - pos.entryPx) / pos.riskPerShare,
-          retPct: (exitPx - pos.entryPx) / pos.entryPx,
-          pnl,
-        });
-        open.delete(sym);
-      }
+      const exitPx = close * (1 - slip);
+      const pnl = (exitPx - pos.entryPx) * pos.shares;
+      equity += pnl;
+      trades.push({
+        symbol: sym,
+        entryDate: pos.entryDate,
+        entryPx: pos.entryPx,
+        exitDate: date,
+        exitPx,
+        reason,
+        shares: pos.shares,
+        rMultiple: (exitPx - pos.entryPx) / pos.riskPerShare,
+        retPct: (exitPx - pos.entryPx) / pos.entryPx,
+        pnl,
+      });
+      open.delete(sym);
     }
 
     // 2) Entries — 20-day high breakout, then through the risk gate.
     for (const sym of config.symbols) {
       if (open.has(sym)) continue; // one position per symbol, no pyramiding
       const i = idx[sym].get(date);
-      if (i === undefined || i < entryLookback) continue; // warm-up
-      if (useAtr && atrBySymbol[sym][i] === undefined) continue; // ATR warm-up
-      if (useRegime && i < regime.smaPeriod) continue; // SMA warm-up
+      if (i === undefined) continue; // no bar for this symbol on this date
       const bars = barsBySymbol[sym];
-      const close = bars[i].close;
 
-      if (!(close > highestClose(bars, i, entryLookback))) continue;
-
-      // Regime filter: only take the breakout in an uptrend (close above its
-      // long-term SMA). Entry-only; exits are untouched.
-      if (useRegime && close <= smaClose(bars, i, regime.smaPeriod)) continue;
-
-      // Risk-per-share source depends on stop_method; sizing itself
-      // (gate.js) doesn't care which produced it.
-      const stopLevel = useAtr
-        ? close - rules.atr_multiple * atrBySymbol[sym][i]
-        : lowestClose(bars, i, exitLookback); // entry - 1R (channel mode)
-      const decision = sizePosition({
-        entry: close,
-        stopLevel,
+      const decision = decideEntry({
+        bars,
+        i,
         equity,
         openCount: open.size,
         rules,
+        strategy,
+        atrAtEntry: useAtr ? atrBySymbol[sym][i] : undefined,
       });
       if (!decision.accepted) {
-        rejected++;
+        if (decision.gateRejected) rejected++;
         continue;
       }
 
       open.set(sym, {
         symbol: sym,
         entryDate: date,
-        entryPx: close * (1 + slip),
+        entryPx: decision.entry * (1 + slip),
         shares: decision.shares,
-        stopLevel,
+        stopLevel: decision.stopLevel,
         riskPerShare: decision.riskPerShare,
       });
     }

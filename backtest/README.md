@@ -91,6 +91,34 @@ distance. Prints the same comparison columns as the atr sweep and persists to
 filter earns its keep (better expectancy/drawdown) or is net cost (fewer
 trades for no gain).
 
+## Live paper dry-run
+
+```bash
+export APCA_API_KEY_ID=your_paper_key
+export APCA_API_SECRET_KEY=your_paper_secret
+node backtest/live.js
+```
+
+Runs the strategy once against your Alpaca **paper** account and reports the
+orders it *would* place — **it submits nothing** (there is no order-submission
+code in v1). It loads the risk rules first and fails closed, reads account
+equity and open positions from the paper endpoint, decides on the **last
+completed daily bar** (never a partial in-progress one), and prints/saves a
+per-symbol report (`ENTER` with size and stop, `EXIT` with reason, `HOLD`,
+`SKIP` with reason, or `FLAGGED`). The decision logic is the exact same
+`decide.js` the backtest uses, so live and backtest can't drift.
+
+Per-position strategy state (stop level, risk per share) that the broker
+doesn't track is kept locally in `backtest/live-state.json` (gitignored);
+a broker position with no local state is flagged rather than guessed. Reports
+are written to `backtest/results/` as `live-<timestamp>.json`.
+
+Recent bars use the **`iex`** feed (free): the free Alpaca data plan blocks
+*recent* `sip` data (`403 subscription does not permit querying recent SIP
+data`). The backtest still uses `sip` for history. IEX daily closes can differ
+slightly from the consolidated close, so live signals may not exactly match a
+`sip`-based backtest — a known free-tier limitation, not a bug.
+
 ## Data
 
 Daily OHLCV from Alpaca's historical market-data API, **read-only** — it issues

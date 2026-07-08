@@ -33,3 +33,6 @@ backtest/results
 *.njsproj
 *.sln
 *.sw?
+
+# Live paper-trading local state store
+backtest/live-state.json
