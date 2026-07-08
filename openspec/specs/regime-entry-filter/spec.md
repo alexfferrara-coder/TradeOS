@@ -24,17 +24,6 @@ entry. The filter SHALL apply only to entries and SHALL NOT affect exits.
 - **THEN** its exit conditions (channel trail and hard stop) are evaluated
   exactly as when the filter is disabled
 
-### Requirement: Filter is off by default and preserves prior behavior
-The regime filter SHALL be disabled by default, and with it disabled the
-backtest SHALL produce exactly the trades it produced before this capability
-existed.
-
-#### Scenario: default run is unchanged
-- **WHEN** `runBacktest` is called without a strategy override (filter default
-  off)
-- **THEN** the trades produced are identical to those produced before the
-  regime filter was added
-
 ### Requirement: SMA warm-up before filtered entries
 When the regime filter is enabled, the backtest SHALL NOT open a filtered entry
 until at least `smaPeriod` prior closes exist for that symbol.
@@ -66,4 +55,19 @@ expectancy (R and percent), total P&L, and max drawdown.
 - **THEN** a JSON file is written under `backtest/results/` containing the
   baseline and per-horizon results, matching the persistence pattern used by
   the other runners
+
+### Requirement: Regime filter default and backward compatibility
+The regime filter SHALL default to enabled at a 200-day SMA (adopted based on
+the regime sweep). When explicitly disabled, the backtest SHALL produce exactly
+the trades it produced before this capability existed.
+
+#### Scenario: default run applies the filter
+- **WHEN** `runBacktest` is called without a strategy override
+- **THEN** the shipped `config.strategy` applies the regime filter at a 200-day
+  SMA
+
+#### Scenario: disabling reproduces prior behavior
+- **WHEN** `runBacktest` is called with the regime filter explicitly disabled
+- **THEN** the trades produced are identical to those produced before the
+  regime filter was added
 

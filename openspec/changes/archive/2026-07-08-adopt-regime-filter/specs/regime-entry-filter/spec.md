@@ -1,6 +1,11 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: Filter is off by default and preserves prior behavior`
+- TO: `### Requirement: Regime filter default and backward compatibility`
+
 ## MODIFIED Requirements
 
-### Requirement: Filter is enabled by default and disabling preserves prior behavior
+### Requirement: Regime filter default and backward compatibility
 The regime filter SHALL default to enabled at a 200-day SMA (adopted based on
 the regime sweep). When explicitly disabled, the backtest SHALL produce exactly
 the trades it produced before this capability existed.
