@@ -142,3 +142,52 @@ describe('runBacktest (integration, atr mode)', () => {
     assert.deepEqual(openAtEnd, [CARRIER]);
   });
 });
+
+// --- Regime-filter series. The filter only bites when smaPeriod > entryLookback:
+// a 20-day-high breakout is by definition above any *shorter* average, so the
+// SMA must reach further back (into old higher prices) to veto. This series is
+// a downtrend that bounces into a fresh 20-day high that is still below the
+// longer (30-day) SMA.
+//
+//   bars  0..9   close=200   old high prices (drag the 30-day SMA up)
+//   bars 10..29  close=100   recent lower prices (the 20-day breakout window)
+//   bar  30      close=105   breakout: 105 > prior-20 high (=100)
+//                            SMA(30) = (10*200 + 20*100)/30 = 133.3, so 105 <= 133.3
+//                            => filter ON skips; filter OFF takes it
+//   bar  31      close=95    hits the channel/hard stop (<=100) => exit (filter OFF)
+function buildRegimeSeries() {
+  const bars = [];
+  for (let i = 0; i < 10; i++) bars.push(bar(dayISO(i), 200));
+  for (let i = 10; i <= 29; i++) bars.push(bar(dayISO(i), 100));
+  bars.push(bar(dayISO(30), 105));
+  bars.push(bar(dayISO(31), 95));
+  return bars;
+}
+
+const REGIME_ON = { regimeFilter: { enabled: true, smaPeriod: 30 } };
+const REGIME_OFF = { regimeFilter: { enabled: false, smaPeriod: 30 } };
+
+describe('runBacktest (integration, regime filter)', () => {
+  it('filter OFF takes the below-SMA breakout', () => {
+    const bars = buildRegimeSeries();
+    const { trades } = runBacktest(isolate(bars), RULES, REGIME_OFF);
+    assert.equal(trades.length, 1);
+    assert.equal(trades[0].entryDate, dayISO(30));
+  });
+
+  it('filter ON skips the same breakout (close below the 30-day SMA)', () => {
+    const bars = buildRegimeSeries();
+    const { trades, openAtEnd } = runBacktest(isolate(bars), RULES, REGIME_ON);
+    assert.equal(trades.length, 0);
+    assert.equal(openAtEnd.length, 0, 'no position was ever opened');
+  });
+
+  it('default (two-arg call) leaves the filter off — behavior unchanged', () => {
+    // config.strategy.regimeFilter.enabled is false by default, so the
+    // original one-trade channel series still produces its one trade.
+    const bars = buildSeries();
+    const { trades } = runBacktest(isolate(bars), RULES);
+    assert.equal(trades.length, 1);
+    assert.equal(trades[0].entryDate, dayISO(20));
+  });
+});

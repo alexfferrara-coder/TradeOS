@@ -61,6 +61,36 @@ otherwise, since sweeping `atr_multiple` is meaningless when `channel` is the
 active stop source. Results are persisted to `backtest/results/` the same
 way `run.js`'s are.
 
+## Regime entry filter
+
+An optional trend filter on entries: when enabled, a long breakout is taken
+only if the entry-bar close is above its own long-term SMA — i.e. only in an
+uptrend. It is **strategy** config (not risk), so it lives in `config.js` under
+`strategy.regimeFilter` (`{ enabled, smaPeriod }`), separate from the risk
+rules file. It is **off by default**; off reproduces the pre-filter behavior
+exactly. It gates entries only — exits are untouched.
+
+Note the filter only *bites* when `smaPeriod` is longer than `entryLookback`
+(20): a fresh 20-day-high breakout is by construction above any shorter
+average, so the SMA must reach further back (into older, higher prices) to veto
+a breakout that fires inside a longer downtrend.
+
+## Regime sweep
+
+```bash
+export APCA_API_KEY_ID=your_paper_key
+export APCA_API_SECRET_KEY=your_paper_secret
+node backtest/regime-sweep.js
+```
+
+Runs a **filter-off baseline** plus one run per value in
+`config.sweep.regimeSmaPeriods` (filter on), holding `atr_multiple` constant so
+each row's differences reflect the filter and its horizon, not the stop
+distance. Prints the same comparison columns as the atr sweep and persists to
+`backtest/results/`. This table is the decision input for whether the regime
+filter earns its keep (better expectancy/drawdown) or is net cost (fewer
+trades for no gain).
+
 ## Data
 
 Daily OHLCV from Alpaca's historical market-data API, **read-only** — it issues

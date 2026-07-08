@@ -30,11 +30,20 @@ export const config = {
   // On-disk cache for fetched bars (gitignored).
   dataDir: new URL('./data/', import.meta.url),
 
-  // Default atr_multiple range for `node backtest/sweep.js`. atr_period and
-  // the Donchian lookbacks above are held fixed across every sweep run —
-  // only atr_multiple varies. Override with a CLI arg list if needed later;
-  // this is just the starting default.
+  // Strategy-level (not risk) parameters. Injected into runBacktest so the
+  // regime sweep can vary them per run; risk limits stay in the risk gate.
+  strategy: {
+    // Regime entry filter: when enabled, a long breakout is taken only if the
+    // close is above its prior-`smaPeriod` SMA. Default OFF — off reproduces
+    // the pre-filter behavior exactly.
+    regimeFilter: { enabled: false, smaPeriod: 200 },
+  },
+
+  // Sweep ranges. Each sweep varies ONE parameter and holds the rest fixed.
+  //   atrMultiples     — for `node backtest/sweep.js` (atr_period & lookbacks fixed)
+  //   regimeSmaPeriods — for `node backtest/regime-sweep.js` (atr_multiple fixed)
   sweep: {
     atrMultiples: [1.5, 2.0, 2.5, 3.0, 3.5],
+    regimeSmaPeriods: [50, 100, 150, 200],
   },
 };

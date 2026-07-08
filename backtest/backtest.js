@@ -3,14 +3,19 @@
 // symbols. Each day: process exits first (frees slots), then entries.
 
 import { config } from './config.js';
-import { highestClose, lowestClose } from './strategy.js';
+import { highestClose, lowestClose, smaClose } from './strategy.js';
 import { sizePosition } from './gate.js';
 import { atrSeries } from './atr.js';
 
-export function runBacktest(barsBySymbol, rules) {
+// `strategy` (regime filter etc.) is injected so the regime sweep can vary it
+// per run; it defaults to config.strategy so existing two-arg callers are
+// unaffected.
+export function runBacktest(barsBySymbol, rules, strategy = config.strategy) {
   const { entryLookback, exitLookback, startEquity, costBps } = config;
   const slip = costBps / 10000;
   const useAtr = rules.stop_method === 'atr';
+  const regime = strategy.regimeFilter;
+  const useRegime = regime && regime.enabled;
 
   // Per-symbol date -> index lookup, and the union of all trading dates.
   // atrBySymbol is only populated (and only consulted) in atr mode — Wilder
@@ -77,10 +82,15 @@ export function runBacktest(barsBySymbol, rules) {
       const i = idx[sym].get(date);
       if (i === undefined || i < entryLookback) continue; // warm-up
       if (useAtr && atrBySymbol[sym][i] === undefined) continue; // ATR warm-up
+      if (useRegime && i < regime.smaPeriod) continue; // SMA warm-up
       const bars = barsBySymbol[sym];
       const close = bars[i].close;
 
       if (!(close > highestClose(bars, i, entryLookback))) continue;
+
+      // Regime filter: only take the breakout in an uptrend (close above its
+      // long-term SMA). Entry-only; exits are untouched.
+      if (useRegime && close <= smaClose(bars, i, regime.smaPeriod)) continue;
 
       // Risk-per-share source depends on stop_method; sizing itself
       // (gate.js) doesn't care which produced it.

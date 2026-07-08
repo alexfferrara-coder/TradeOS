@@ -20,3 +20,13 @@ export function lowestClose(bars, i, lookback) {
   }
   return l;
 }
+
+// Simple moving average of the prior `period` closes, same "prior N days,
+// today excluded" convention as highestClose/lowestClose. Stateless — a plain
+// window mean, recomputed per call (no precompute needed, unlike ATR).
+// Callers must ensure i >= period so the full window exists.
+export function smaClose(bars, i, period) {
+  let sum = 0;
+  for (let j = i - period; j < i; j++) sum += bars[j].close;
+  return sum / period;
+}
