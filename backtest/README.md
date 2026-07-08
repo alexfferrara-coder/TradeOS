@@ -22,6 +22,19 @@ limits (`max_risk_per_trade` 1%, `max_position_pct` 20%, `max_correlated_positio
 drive position sizing and entry rejection in `gate.js`. No rule numbers are
 hardcoded in the backtest.
 
+## Stop method: channel vs. ATR
+
+The risk rules file also declares `stop_method` (`atr` | `channel`),
+`atr_period`, and `atr_multiple`. `channel` (or omitting `stop_method`
+entirely) keeps the original behavior: risk-per-share is the entry-to-prior-
+10-day-low distance, so the trailing channel exit is always the binding exit
+and the "hard stop" is a redundant floor. `atr` derives risk-per-share from
+Wilder's average true range instead (`R = atr_multiple × ATR(atr_period)` at
+entry) — a real, independent stop distance that can bind before the channel
+exit does. Either way, the Donchian 20/10 entry/exit condition itself is
+unchanged; only the stop-loss source differs. Sizing (`gate.js`) doesn't
+care which produced the stop level.
+
 ## Run
 
 ```bash
@@ -31,6 +44,22 @@ node backtest/run.js
 ```
 
 Requires Node 18+ (uses global `fetch`). No new npm dependencies.
+
+## Sweep (atr_multiple only)
+
+```bash
+export APCA_API_KEY_ID=your_paper_key
+export APCA_API_SECRET_KEY=your_paper_secret
+node backtest/sweep.js
+```
+
+Runs the backtest once per value in `config.sweep.atrMultiples`, holding
+`atr_period` and the Donchian lookbacks fixed, and prints a comparison table
+(trades, win rate, expectancy R/%, total P&L, max drawdown) per multiple.
+**Requires `stop_method: atr` in the risk rules file** — it refuses to run
+otherwise, since sweeping `atr_multiple` is meaningless when `channel` is the
+active stop source. Results are persisted to `backtest/results/` the same
+way `run.js`'s are.
 
 ## Data
 
@@ -45,7 +74,8 @@ so re-runs don't refetch. Default feed is `iex` (free); set `feed: 'sip'` in
 - Per-trade log: symbol, entry/exit dates, exit reason (`channel` | `hard-stop`),
   R-multiple, return %, P&L $.
 - Summary: number of trades (and gate rejections), win rate, avg win/loss
-  (% and R), expectancy (R and % per trade), total P&L, final equity.
+  (% and R), expectancy (R and % per trade), total P&L, final equity, max
+  drawdown (% and $, from the closed-trade equity curve).
 
 ## Known v1 simplifications (deliberate, not bugs)
 

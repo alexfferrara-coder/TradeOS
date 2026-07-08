@@ -55,7 +55,7 @@ async function main() {
   }
 
   // --- Summary. ---
-  const s = summarize(trades);
+  const s = summarize(trades, config.startEquity);
   console.log('\n── Summary ──────────────────────');
   console.log(`Trades:        ${s.n}   (rejected by gate: ${rejected})`);
   console.log(`Win rate:      ${pct(s.winRate)}`);
@@ -66,6 +66,9 @@ async function main() {
   );
   console.log(
     `Total P&L:     ${usd(s.totalPnl)}   Final equity: ${usd(finalEquity)}`
+  );
+  console.log(
+    `Max drawdown:  ${pct(s.maxDrawdownPct)}  (${usd(s.maxDrawdownUsd)})`
   );
   if (openAtEnd.length) {
     console.log(

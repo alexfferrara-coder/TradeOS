@@ -25,4 +25,12 @@ export const config = {
 
   // On-disk cache for fetched bars (gitignored).
   dataDir: new URL('./data/', import.meta.url),
+
+  // Default atr_multiple range for `node backtest/sweep.js`. atr_period and
+  // the Donchian lookbacks above are held fixed across every sweep run —
+  // only atr_multiple varies. Override with a CLI arg list if needed later;
+  // this is just the starting default.
+  sweep: {
+    atrMultiples: [1.5, 2.0, 2.5, 3.0, 3.5],
+  },
 };
