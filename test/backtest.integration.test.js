@@ -35,6 +35,10 @@ function buildSeries() {
 
 const RULES = { max_risk_per_trade: 0.01, max_position_pct: 0.2, max_correlated_positions: 2 };
 
+// Pin the filter OFF for tests of filter-independent behavior, so they don't
+// depend on the config.strategy default (which ships with the filter ON).
+const NO_FILTER = { regimeFilter: { enabled: false, smaPeriod: 200 } };
+
 // SPY as carrier + empty stubs for the remaining config.symbols.
 function isolate(bars) {
   const bySymbol = { [CARRIER]: bars };
@@ -47,7 +51,7 @@ describe('runBacktest (integration)', () => {
 
   it('produces the one hand-calculated trade with correct dates and R', () => {
     const bars = buildSeries();
-    const { trades } = runBacktest(isolate(bars), RULES);
+    const { trades } = runBacktest(isolate(bars), RULES, NO_FILTER);
 
     const slip = config.costBps / 10000;
     const expEntry = 110 * (1 + slip);
@@ -67,8 +71,8 @@ describe('runBacktest (integration)', () => {
     const full = buildSeries();
     const truncated = full.slice(0, 34); // genuine prefix, still contains the full trade
 
-    const fullTrades = runBacktest(isolate(full), RULES).trades;
-    const truncTrades = runBacktest(isolate(truncated), RULES).trades;
+    const fullTrades = runBacktest(isolate(full), RULES, NO_FILTER).trades;
+    const truncTrades = runBacktest(isolate(truncated), RULES, NO_FILTER).trades;
 
     assert.ok(truncTrades.length <= fullTrades.length);
     for (let i = 0; i < truncTrades.length; i++) {
@@ -116,7 +120,7 @@ const RULES_ATR = {
 describe('runBacktest (integration, atr mode)', () => {
   it('exits on the ATR-derived hard stop, tighter than the channel would', () => {
     const bars = buildAtrSeries();
-    const { trades } = runBacktest(isolate(bars), RULES_ATR);
+    const { trades } = runBacktest(isolate(bars), RULES_ATR, NO_FILTER);
 
     const slip = config.costBps / 10000;
     const riskPerShare = 7.6; // 110 - 102.4
@@ -136,7 +140,7 @@ describe('runBacktest (integration, atr mode)', () => {
 
   it('the same bars in channel mode do not exit on day 21 (proves the stop source actually changed)', () => {
     const bars = buildAtrSeries();
-    const { trades, openAtEnd } = runBacktest(isolate(bars), RULES);
+    const { trades, openAtEnd } = runBacktest(isolate(bars), RULES, NO_FILTER);
 
     assert.equal(trades.length, 0, 'channel low (100) never breached by a close of 102');
     assert.deepEqual(openAtEnd, [CARRIER]);
@@ -182,12 +186,18 @@ describe('runBacktest (integration, regime filter)', () => {
     assert.equal(openAtEnd.length, 0, 'no position was ever opened');
   });
 
-  it('default (two-arg call) leaves the filter off — behavior unchanged', () => {
-    // config.strategy.regimeFilter.enabled is false by default, so the
-    // original one-trade channel series still produces its one trade.
+  it('explicitly disabling the filter reproduces the pre-filter behavior', () => {
+    // The durable backward-compat guarantee: with the filter disabled, the
+    // original one-trade channel series still produces exactly its one trade,
+    // independent of what config.strategy defaults to.
     const bars = buildSeries();
-    const { trades } = runBacktest(isolate(bars), RULES);
+    const { trades } = runBacktest(isolate(bars), RULES, NO_FILTER);
     assert.equal(trades.length, 1);
     assert.equal(trades[0].entryDate, dayISO(20));
+  });
+
+  it('config.strategy now ships with the filter enabled (adopted)', () => {
+    assert.equal(config.strategy.regimeFilter.enabled, true);
+    assert.equal(config.strategy.regimeFilter.smaPeriod, 200);
   });
 });

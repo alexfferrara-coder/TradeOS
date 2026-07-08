@@ -34,9 +34,10 @@ export const config = {
   // regime sweep can vary them per run; risk limits stay in the risk gate.
   strategy: {
     // Regime entry filter: when enabled, a long breakout is taken only if the
-    // close is above its prior-`smaPeriod` SMA. Default OFF — off reproduces
-    // the pre-filter behavior exactly.
-    regimeFilter: { enabled: false, smaPeriod: 200 },
+    // close is above its prior-`smaPeriod` SMA. Enabled at SMA 200 — the
+    // regime sweep found long horizons lift expectancy/win-rate at flat risk,
+    // with 200 the best row (48%->52% win, 0.256->0.352R). See README.
+    regimeFilter: { enabled: true, smaPeriod: 200 },
   },
 
   // Sweep ranges. Each sweep varies ONE parameter and holds the rest fixed.
