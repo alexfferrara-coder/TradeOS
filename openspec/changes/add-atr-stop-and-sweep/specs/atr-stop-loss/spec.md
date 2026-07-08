@@ -68,9 +68,9 @@ whether the supplied stop level was derived from the ATR or the channel.
   for a channel-derived `stopLevel`
 
 ### Requirement: Risk-per-trade ceiling unaffected by stop method
-The existing `max_risk_per_trade` ceiling (must not exceed 0.1) in the risk
-rules loader SHALL apply identically regardless of `stop_method`, and this
-change SHALL NOT introduce any way to configure, raise, or bypass it.
+The risk rules loader SHALL enforce the existing `max_risk_per_trade` ceiling
+(0.1 maximum) identically regardless of `stop_method`, and this change SHALL
+NOT introduce any way to configure, raise, or bypass that ceiling.
 
 #### Scenario: ceiling still enforced in atr mode
 - **WHEN** `stop_method` is `atr` and `max_risk_per_trade` exceeds `0.1`
