@@ -79,11 +79,22 @@ so re-runs don't refetch. Default feed is `iex` (free); set `feed: 'sip'` in
 
 ## Known v1 simplifications (deliberate, not bugs)
 
-- **Universe is survivorship-biased.** SPY/AAPL/MSFT/NVDA/JPM are known winners;
-  v1 expectancy is a **plumbing check, not an edge estimate.**
+- **Universe is de-biased, but not fully.** The original five (SPY/AAPL/MSFT/
+  NVDA/JPM) were all winners; the universe now adds eleven names with real,
+  sustained drawdowns spread across failure modes — idiosyncratic disaster
+  (BA), secular decline (INTC, WBA, T), struggling megacaps (DIS, NKE), growth
+  crashes that stayed down (PYPL, ROKU), growth crashes that recovered (NFLX,
+  META), and a choppy cyclical (F). This lets loss-avoidance logic (e.g. a
+  future regime filter) be judged on both its cost and its benefit. Remaining
+  ceiling: no truly delisted/dead names (SVB, bankruptcies) — Alpaca lacks the
+  data — so this is "fell hard but survived," most of the bias gone, not all.
+  Absolute expectancy/P&L is still a behavior read, not a live-edge estimate.
 - **Flat correlation cap.** `max_correlated_positions` is enforced as a flat
   portfolio-wide concurrent cap (every open position treated as correlated),
-  not sector-grouped. Real correlation modeling is a later research-to-rules pass.
+  not sector-grouped. Real correlation modeling is a later research-to-rules
+  pass. Note: with 16 symbols competing for 2 concurrent slots, this cap now
+  rejects far more entries than it did at 5 symbols — the gate working as
+  designed, and part of why the de-biasing doesn't fully "bite" yet.
 - **Close-based exits.** Both the channel exit and the hard stop are evaluated on
   the daily close — no intrabar fills or gap-through modeling.
 - **Costs.** `costBps` (slippage + commission) defaults to 0; set it in `config.js`.

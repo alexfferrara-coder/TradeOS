@@ -2,8 +2,12 @@
 // are NOT here on purpose — those come only from loadRiskRules.js via gate.js.
 
 export const config = {
-  // Universe. NOTE: survivorship-biased toward known winners (see README).
-  symbols: ['SPY', 'AAPL', 'MSFT', 'NVDA', 'JPM'],
+  // Universe. De-biased: the original five winners plus eleven names with
+  // real, sustained drawdowns spread across failure modes (see README).
+  symbols: [
+    'SPY', 'AAPL', 'MSFT', 'NVDA', 'JPM',
+    'BA', 'INTC', 'WBA', 'PYPL', 'NFLX', 'DIS', 'F', 'META', 'ROKU', 'T', 'NKE',
+  ],
 
   // Historical window (daily bars).
   start: '2019-01-01',
