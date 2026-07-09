@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TradeOS — Risk-gated Screener (prototype)</title>
+<style>
+  :root {
+    --page:#0B0E13; --panel:#0F141C; --card:#141A24; --card-2:#18202c;
+    --line:#1B2330; --line-2:#232D3C;
+    --text:#E8ECF4; --text-2:#93A0B4; --text-3:#5A6478;
+    --accent:#6E56F7; --accent-2:#8B78FF;
+    --up:#2EBD85; --down:#F6465D; --caution:#F5B23B;
+    --up-bg:rgba(46,189,133,0.12); --down-bg:rgba(246,70,93,0.12); --acc-bg:rgba(110,86,247,0.12);
+    --mono: ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { height:100%; }
+  body { margin:0; background:var(--page); color:var(--text); font:13px/1.45 var(--sans); -webkit-font-smoothing:antialiased; }
+  .tnum { font-variant-numeric:tabular-nums; } .mono { font-family:var(--mono); }
+  button,input,select { font-family:inherit; }
+
+  .app { max-width:1240px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+
+  /* header */
+  .top { display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:650; }
+  .brand .dot { width:11px; height:11px; border-radius:3px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
+  .brand span { color:var(--text-3); font-weight:600; }
+  .tool { padding-left:14px; margin-left:2px; border-left:1px solid var(--line); }
+  .tool h1 { font-size:15px; margin:0; font-weight:640; }
+  .tool p { margin:1px 0 0; font-size:11.5px; color:var(--text-3); }
+  .spacer { flex:1; }
+  .chip-live { font-family:var(--mono); font-size:10px; letter-spacing:.8px; text-transform:uppercase; padding:4px 8px; border-radius:5px; color:var(--caution); background:rgba(245,178,59,.10); border:1px solid rgba(245,178,59,.25); }
+
+  /* filter toolbar */
+  .filters { display:flex; align-items:center; gap:10px; padding:12px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .search { position:relative; }
+  .search input {
+    width:200px; background:var(--card); border:1px solid var(--line); border-radius:9px;
+    color:var(--text); padding:9px 12px 9px 32px; font-size:13px;
+  }
+  .search input:focus { outline:none; border-color:var(--accent); }
+  .search svg { position:absolute; left:10px; top:9px; width:15px; height:15px; color:var(--text-3); }
+  .seg { display:inline-flex; background:var(--card); border:1px solid var(--line); border-radius:9px; padding:2px; }
+  .seg button { font-family:var(--mono); font-size:11.5px; color:var(--text-2); background:transparent; border:0; padding:7px 12px; border-radius:7px; cursor:pointer; }
+  .seg button[aria-pressed="true"] { color:var(--text); background:var(--card-2); box-shadow:inset 0 0 0 1px var(--line-2); }
+  .chip {
+    font-size:12px; color:var(--text-2); background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:7px 13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+  }
+  .chip:hover { color:var(--text); border-color:var(--line-2); }
+  .chip[aria-pressed="true"] { color:var(--accent-2); background:var(--acc-bg); border-color:rgba(110,86,247,.4); }
+  .chip .x { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.5; }
+  .risk-note { margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--text-3); }
+  .risk-note b { color:var(--text-2); }
+
+  /* table */
+  .tablewrap { overflow:auto; flex:1; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; min-width:1040px; }
+  thead th {
+    position:sticky; top:0; z-index:2; background:var(--panel); color:var(--text-3);
+    font-weight:500; font-size:11px; text-align:right; padding:11px 14px; white-space:nowrap;
+    border-bottom:1px solid var(--line); cursor:pointer; user-select:none;
+  }
+  thead th:first-child, tbody td:first-child { text-align:left; position:sticky; left:0; background:var(--panel); z-index:1; }
+  tbody td:first-child { background:var(--page); }
+  thead th.num, tbody td.num { text-align:right; }
+  thead th:hover { color:var(--text); }
+  thead th .ar { color:var(--accent-2); font-size:9px; }
+  tbody td { padding:11px 14px; border-bottom:1px solid var(--line); font-family:var(--mono); text-align:right; white-space:nowrap; }
+  tbody tr:hover td { background:var(--card); }
+  tbody tr:hover td:first-child { background:var(--card); }
+  .sym { font-family:var(--sans); font-weight:640; font-size:13px; }
+  .sym small { display:block; color:var(--text-3); font-weight:400; font-size:10.5px; font-family:var(--sans); }
+  td.up { color:var(--up); } td.down { color:var(--down); }
+  .badge { font-family:var(--mono); font-size:10px; letter-spacing:.4px; padding:3px 8px; border-radius:6px; display:inline-block; }
+  .badge.bull { color:var(--up); background:var(--up-bg); }
+  .badge.bear { color:var(--down); background:var(--down-bg); }
+  .sig { font-family:var(--mono); font-size:10.5px; letter-spacing:.5px; padding:3px 9px; border-radius:6px; font-weight:600; }
+  .sig.enter { color:#04110c; background:var(--up); }
+  .sig.watch { color:var(--caution); background:rgba(245,178,59,.12); border:1px solid rgba(245,178,59,.3); }
+  .sig.none { color:var(--text-3); }
+  .size-cell { color:var(--accent-2); font-weight:600; }
+  .gate-col { box-shadow:inset 1px 0 0 var(--line-2); }
+
+  /* footer summary */
+  .foot { display:flex; align-items:center; gap:20px; padding:12px 20px; border-top:1px solid var(--line); font-size:12px; color:var(--text-2); flex-wrap:wrap; }
+  .foot .stat { font-family:var(--mono); } .foot .stat b { color:var(--text); }
+  .foot .stat.enter b { color:var(--up); }
+  .empty { padding:40px; text-align:center; color:var(--text-3); }
+
+  @media (max-width:720px){ .risk-note{ display:none; } .top{ flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="dot"></span>Trade<span>OS</span></div>
+    <div class="tool"><h1>Screener</h1><p>Risk-gated stock discovery</p></div>
+    <div class="spacer"></div>
+    <span class="chip-live">Sample data</span>
+  </header>
+
+  <div class="filters">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="q" placeholder="Search symbol or name" />
+    </div>
+    <div class="seg" role="group" aria-label="Signal filter">
+      <button data-sig="all" aria-pressed="true">All</button>
+      <button data-sig="enter">Enter</button>
+      <button data-sig="watch">+ Watch</button>
+    </div>
+    <button class="chip" data-flt="bull" aria-pressed="false"><span class="x"></span>Regime bullish</button>
+    <button class="chip" data-flt="fits" aria-pressed="false"><span class="x"></span>Fits 1R risk</button>
+    <div class="risk-note">Risk unit <b>1.00R = $1,000</b> · stop = <b>2× ATR</b></div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">No symbols match these filters.</div>
+  </div>
+
+  <div class="foot">
+    <span class="stat"><b id="s-count">0</b> of <b id="s-total">0</b> symbols</span>
+    <span class="stat enter"><b id="s-enter">0</b> ENTER signals today</span>
+    <span class="stat">Avg position risk <b id="s-risk">$0</b></span>
+    <span class="stat" style="margin-left:auto;color:var(--text-3)">Click a column to sort · click again to reverse</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var USD=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
+  var USD0=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0});
+  var RISK_UNIT=1000;
+
+  var base=[
+    ["AAPL","Apple","Tech"],["MSFT","Microsoft","Tech"],["NVDA","Nvidia","Semis"],["AMD","Adv Micro","Semis"],
+    ["JPM","JP Morgan","Financials"],["GS","Goldman Sachs","Financials"],["BAC","Bank of America","Financials"],
+    ["XOM","Exxon Mobil","Energy"],["CVX","Chevron","Energy"],["TSLA","Tesla","Auto"],["F","Ford","Auto"],
+    ["AMZN","Amazon","Consumer"],["WMT","Walmart","Consumer"],["COST","Costco","Consumer"],["MCD","McDonald's","Consumer"],
+    ["UNH","UnitedHealth","Health"],["LLY","Eli Lilly","Health"],["PFE","Pfizer","Health"],["JNJ","Johnson & J","Health"],
+    ["BA","Boeing","Industrials"],["CAT","Caterpillar","Industrials"],["GE","GE Aerospace","Industrials"],
+    ["KO","Coca-Cola","Staples"],["PG","Procter & G","Staples"],["NFLX","Netflix","Tech"],["META","Meta","Tech"],
+    ["GOOGL","Alphabet","Tech"],["ORCL","Oracle","Tech"],["CRM","Salesforce","Tech"],["INTC","Intel","Semis"]
+  ];
+  function rnd(i){var x=Math.sin(i*99.13+4.7)*43758.5453;return x-Math.floor(x);}
+  var data=base.map(function(b,i){
+    var price=18+rnd(i)*540;
+    var chg=(rnd(i+1)-0.45)*4.2;
+    var atr=price*(0.012+rnd(i+2)*0.02);
+    var above200=rnd(i+3)>0.4;
+    // distance to 20-day-high breakout: negative/zero = at or above (breakout)
+    var toBreak=(rnd(i+4)-0.35)*6;           // %
+    var stop=price-2*atr;
+    var rps=2*atr;
+    var size=Math.floor(RISK_UNIT/rps);
+    var vol=(2+rnd(i+5)*90);                   // millions
+    var sig="none";
+    if(above200 && toBreak<=0) sig="enter";
+    else if(above200 && toBreak<=1.8) sig="watch";
+    return {sym:b[0],name:b[1],sector:b[2],price:price,chg:chg,atr:atr,above200:above200,
+            toBreak:toBreak,stop:stop,rps:rps,size:size,vol:vol,sig:sig,risk:RISK_UNIT};
+  });
+
+  var cols=[
+    {k:"sym",  t:"Symbol", n:false},
+    {k:"price",t:"Last",   n:true, f:function(r){return USD.format(r.price).replace("$","");}},
+    {k:"chg",  t:"Chg %",  n:true, cls:function(r){return r.chg>=0?"up":"down";}, f:function(r){return (r.chg>=0?"▲ ":"▼ ")+Math.abs(r.chg).toFixed(2)+"%";}},
+    {k:"above200",t:"Regime",n:true, html:function(r){return r.above200?'<span class="badge bull">▲ 200SMA</span>':'<span class="badge bear">▼ 200SMA</span>';}},
+    {k:"sigOrder",t:"Signal",n:true, html:function(r){return r.sig==="enter"?'<span class="sig enter">ENTER</span>':r.sig==="watch"?'<span class="sig watch">WATCH</span>':'<span class="sig none">—</span>';}},
+    {k:"toBreak",t:"→ 20-hi", n:true, f:function(r){return (r.toBreak<=0?"":"+")+r.toBreak.toFixed(2)+"%";}, cls:function(r){return r.toBreak<=0?"up":"";}},
+    {k:"atr",  t:"ATR",    n:true, f:function(r){return r.atr.toFixed(2);}},
+    {k:"stop", t:"Stop",   n:true, gate:true, f:function(r){return USD.format(r.stop).replace("$","");}},
+    {k:"rps",  t:"Risk/sh",n:true, gate:true, f:function(r){return USD.format(r.rps).replace("$","");}},
+    {k:"size", t:"Size · 1R",n:true, gate:true, html:function(r){return '<span class="size-cell">'+r.size.toLocaleString()+' sh</span>';}},
+    {k:"vol",  t:"Vol (M)", n:true, f:function(r){return r.vol.toFixed(1);}}
+  ];
+  data.forEach(function(r){ r.sigOrder=r.sig==="enter"?2:r.sig==="watch"?1:0; });
+
+  var state={q:"",sig:"all",flt:{bull:false,fits:false},sort:"sigOrder",dir:-1};
+
+  // header
+  document.getElementById("head").innerHTML=cols.map(function(c){
+    return '<th class="'+(c.n?"num":"")+(c.gate?" gate-col":"")+'" data-k="'+c.k+'">'+c.t+' <span class="ar" data-ar="'+c.k+'"></span></th>';
+  }).join("");
+
+  function passes(r){
+    if(state.q){ var q=state.q.toLowerCase(); if(r.sym.toLowerCase().indexOf(q)<0 && r.name.toLowerCase().indexOf(q)<0) return false; }
+    if(state.sig==="enter" && r.sig!=="enter") return false;
+    if(state.sig==="watch" && r.sig==="none") return false;
+    if(state.flt.bull && !r.above200) return false;
+    if(state.flt.fits && r.rps>RISK_UNIT) return false; // (always true here, illustrative)
+    return true;
+  }
+
+  function draw(){
+    var rows=data.filter(passes);
+    rows.sort(function(a,b){
+      var av=a[state.sort], bv=b[state.sort];
+      if(typeof av==="string") return state.dir*av.localeCompare(bv);
+      return state.dir*(av-bv);
+    });
+    var body=document.getElementById("rows");
+    body.innerHTML=rows.map(function(r){
+      return "<tr>"+cols.map(function(c){
+        if(c.k==="sym") return '<td><span class="sym">'+r.sym+'<small>'+r.name+' · '+r.sector+'</small></span></td>';
+        var cls=(c.n?"num ":"")+(c.gate?"gate-col ":"")+(c.cls?c.cls(r):"");
+        var inner=c.html?c.html(r):c.f(r);
+        return '<td class="'+cls.trim()+'">'+inner+'</td>';
+      }).join("")+"</tr>";
+    }).join("");
+    document.getElementById("empty").style.display=rows.length?"none":"block";
+    // header arrows
+    cols.forEach(function(c){ document.querySelector('[data-ar="'+c.k+'"]').textContent = state.sort===c.k ? (state.dir<0?"▼":"▲") : ""; });
+    // summary
+    var enter=rows.filter(function(r){return r.sig==="enter";}).length;
+    var avgRisk=rows.length?rows.reduce(function(s,r){return s+r.risk;},0)/rows.length:0;
+    document.getElementById("s-count").textContent=rows.length;
+    document.getElementById("s-total").textContent=data.length;
+    document.getElementById("s-enter").textContent=enter;
+    document.getElementById("s-risk").textContent=USD0.format(avgRisk);
+  }
+
+  // interactions
+  document.getElementById("q").addEventListener("input",function(e){ state.q=e.target.value; draw(); });
+  document.querySelectorAll(".seg button").forEach(function(b){ b.addEventListener("click",function(){
+    state.sig=b.getAttribute("data-sig");
+    document.querySelectorAll(".seg button").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));});
+    draw();
+  });});
+  document.querySelectorAll(".chip").forEach(function(b){ b.addEventListener("click",function(){
+    var k=b.getAttribute("data-flt"); state.flt[k]=!state.flt[k];
+    b.setAttribute("aria-pressed",String(state.flt[k])); draw();
+  });});
+  document.getElementById("head").addEventListener("click",function(e){
+    var th=e.target.closest("th"); if(!th)return; var k=th.getAttribute("data-k");
+    if(state.sort===k) state.dir*=-1; else { state.sort=k; state.dir=(k==="sym")?1:-1; }
+    draw();
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>
