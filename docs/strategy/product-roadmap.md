@@ -19,7 +19,7 @@ the hub + funnel first, (3) value-to-effort. `[~]` = in progress.
 - [x] **Risk-gated Screener** — a stock screener that filters *and* pre-computes the risk gate (position size, ATR stop, R). Our version of their Stock Screener. *(prototype: `prototypes/screener.html`)*
 - [ ] **Paper Trading** — we already have the paper dry-run loop; productize it.
 - [ ] **Portfolios / equity tracking** — folds in the equity-capture work from the App Home spec.
-- [ ] **Alerts** — price / signal / risk-limit alerts.
+- [x] **Alerts** — price / signal / risk-limit alerts. *(prototype: `prototypes/alerts.html`)*
 
 ## Tier 2 — Context & data tools (retention + funnel breadth)
 - [ ] **Watchlists**
