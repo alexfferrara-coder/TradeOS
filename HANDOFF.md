@@ -1,6 +1,23 @@
 # TradeOS — Session Handoff
 
-_Last updated: 2026-07-08_
+_Last updated: 2026-07-09_
+
+## Product direction — TradingView-style, sold à la carte (2026-07-09)
+We studied TradingView as the model. It's a charting/analysis/social platform
+(not a broker, holds no money); its hub is **Supercharts**, and it monetizes via
+bundled subscription tiers + real-time data add-ons + a large **B2B charting-library
+license** business (40k+ companies) + a **broker marketplace**. Our plan:
+- Build its toolset as **discrete products sold à la carte** (land-and-expand) —
+  a genuinely unclaimed position (TradingView *bundles* into tiers).
+- **Don't out-chart them.** Win on the layer they lack: **automated, risk-gated
+  execution** (our `decide.js` engine + ATR risk gate + backtest⇄live parity).
+  Pitch = "analysis → decision → guarded execution."
+- Build **our own Supercharts** — a charting workspace you can **trade manually**
+  from, centered on the engine/risk (not just drawing tools).
+- Beachhead tools: **Backtester-with-live-parity** + **Risk-gated Screener**.
+- Full analysis: `docs/strategy/2026-07-09-tradingview-teardown.md`.
+  Prioritized build order: `docs/strategy/product-roadmap.md`.
+  Visual prototypes: `prototypes/` (branch `app-home-prototype`).
 
 A running snapshot of where the project stands and what's next, so any new
 session (or collaborator) can pick up immediately.
