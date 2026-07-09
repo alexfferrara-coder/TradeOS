@@ -15,8 +15,8 @@ the hub + funnel first, (3) value-to-effort. `[~]` = in progress.
 - [ ] **À-la-carte packaging + billing** — per-tool SKUs, land-and-expand upsell.
 
 ## Tier 1 — Beachhead tools (our engine's strengths; sell these first)
-- [ ] **Strategy Backtester (live parity)** — flagship differentiator; the `decide.js` engine already powers backtest ⇄ live. TradingView's Pine tester has no live-parity guarantee.
-- [ ] **Risk-gated Screener** — a stock screener that filters *and* pre-computes the risk gate (position size, ATR stop, R). Our version of their Stock Screener.
+- [x] **Strategy Backtester (live parity)** — flagship differentiator; the `decide.js` engine already powers backtest ⇄ live. TradingView's Pine tester has no live-parity guarantee. *(prototype: `prototypes/backtester.html`)*
+- [x] **Risk-gated Screener** — a stock screener that filters *and* pre-computes the risk gate (position size, ATR stop, R). Our version of their Stock Screener. *(prototype: `prototypes/screener.html`)*
 - [ ] **Paper Trading** — we already have the paper dry-run loop; productize it.
 - [ ] **Portfolios / equity tracking** — folds in the equity-capture work from the App Home spec.
 - [ ] **Alerts** — price / signal / risk-limit alerts.

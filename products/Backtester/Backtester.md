@@ -2,7 +2,7 @@
 type: product
 tier: 1
 priority: critical
-status: not-started
+status: prototype
 tags: [tradeos, product]
 ---
 
@@ -11,7 +11,7 @@ tags: [tradeos, product]
 **What it is:** Test a strategy on historical data.
 **TradingView equivalent:** Pine Strategy Tester
 **Our differentiator:** Backtest <-> live parity via the shared decide.js engine — the same code runs both.
-**Prototype:** —
+**Prototype:** `prototypes/backtester.html`
 
 ## Sub-features to build
 - [ ] Define scope + data model
