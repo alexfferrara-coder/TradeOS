@@ -2,7 +2,7 @@
 type: product
 tier: 1
 priority: high
-status: in-progress
+status: prototype
 tags: [tradeos, product]
 ---
 
@@ -11,7 +11,7 @@ tags: [tradeos, product]
 **What it is:** Track holdings and performance over time.
 **TradingView equivalent:** Portfolios
 **Our differentiator:** Real daily equity capture + benchmark vs S&P 500; feeds the App Home hero.
-**Prototype:** `prototypes/app-home.html` (equity hero)
+**Prototype:** `prototypes/portfolios.html` (+ App Home equity hero)
 
 ## Sub-features to build
 - [ ] Define scope + data model
