@@ -185,6 +185,41 @@
     .bottom { grid-column:1; grid-row:4; }
     .protohint { display:none; }
   }
+
+  /* ===== indicators button · modal · drawings (added) ===== */
+  .ind-btn { position:relative; padding:7px 9px; }
+  .ind-btn .tt { position:absolute; top:calc(100% + 9px); left:50%; transform:translateX(-50%); background:var(--card-2); border:1px solid var(--line-2); color:var(--text); font-size:11.5px; white-space:nowrap; padding:6px 10px; border-radius:7px; opacity:0; pointer-events:none; transition:opacity .12s; z-index:60; box-shadow:0 8px 20px -8px rgba(0,0,0,.7); }
+  .ind-btn:hover .tt, .ind-btn:focus-visible .tt { opacity:1; }
+  .ind-badge { position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--accent); color:#fff; font-family:var(--mono); font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 0 2px var(--panel); }
+
+  .clear-draw { position:absolute; top:12px; right:76px; z-index:5; font-family:var(--mono); font-size:11px; color:var(--text-2); background:rgba(11,15,25,.72); border:1px solid var(--line); border-radius:7px; padding:5px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .clear-draw:hover { color:var(--text); border-color:var(--line-2); }
+
+  .modal-bd { position:fixed; inset:0; background:rgba(4,7,12,.62); backdrop-filter:blur(3px); z-index:200; display:grid; place-items:center; padding:16px; }
+  .modal-bd[hidden] { display:none; }
+  .modal { width:min(580px,94vw); max-height:80vh; background:var(--panel); border:1px solid var(--line-2); border-radius:14px; box-shadow:0 30px 80px -20px rgba(0,0,0,.85); display:flex; flex-direction:column; overflow:hidden; }
+  .modal-head { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); }
+  .modal .tabs { display:flex; gap:2px; flex-wrap:wrap; }
+  .modal .tabs button { font-size:12.5px; color:var(--text-2); background:transparent; border:0; padding:8px 13px; border-radius:8px; cursor:pointer; }
+  .modal .tabs button[aria-pressed="true"] { color:var(--text); background:var(--card-2); box-shadow:inset 0 0 0 1px var(--line-2); }
+  .modal .close { margin-left:auto; background:transparent; border:0; color:var(--text-3); font-size:15px; cursor:pointer; padding:5px 9px; border-radius:7px; }
+  .modal .close:hover { color:var(--text); background:var(--card); }
+  .modal-body { overflow:auto; padding:0 14px 14px; }
+  .ind-search { display:flex; align-items:center; gap:10px; position:sticky; top:0; background:var(--panel); padding:12px 0 8px; z-index:1; }
+  .ind-search input { flex:1; background:var(--card); border:1px solid var(--line); border-radius:9px; color:var(--text); padding:9px 12px; font-size:13px; }
+  .ind-search input:focus { outline:none; border-color:var(--accent); }
+  .ind-search .cnt { font-family:var(--mono); font-size:11.5px; color:var(--text-3); white-space:nowrap; }
+  .ind-list { display:flex; flex-direction:column; }
+  .ind-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 4px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .ind-row:hover { background:var(--card); }
+  .ind-row .nm { font-size:12.5px; }
+  .switch { width:34px; height:20px; border-radius:999px; background:var(--card-2); border:1px solid var(--line); position:relative; flex-shrink:0; transition:background .12s; }
+  .switch::after { content:""; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--text-3); transition:transform .12s, background .12s; }
+  .switch.on { background:rgba(110,86,247,.28); border-color:rgba(110,86,247,.55); }
+  .switch.on::after { transform:translateX(14px); background:var(--accent-2); }
+  .soon { padding:28px; text-align:center; color:var(--text-3); font-size:13px; }
+  .psub { font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-3); margin:14px 4px 4px; }
+  .noind { padding:18px; text-align:center; color:var(--text-3); }
 </style>
 </head>
 <body>
@@ -203,7 +238,11 @@
       <button>1m</button><button>5m</button><button>15m</button><button>1H</button>
       <button aria-pressed="true">1D</button><button>1W</button>
     </div>
-    <button class="toolbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 4-6"/></svg> Indicators</button>
+    <button class="toolbtn ind-btn" id="indicatorsBtn" aria-label="Indicators, metrics and strategies">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h6M14 18h6"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="12" cy="18" r="2"/></svg>
+      <span class="ind-badge" id="indBadge" style="display:none">0</span>
+      <span class="tt">Indicators, metrics &amp; strategies</span>
+    </button>
     <div class="spacer"></div>
     <div class="acct"><span>Equity <b class="tnum">$124,318.52</b></span></div>
     <span class="chip">Paper</span>
@@ -236,7 +275,8 @@
       <span class="k" style="color:var(--caution)"><i style="border-color:var(--caution)"></i> 200 SMA · regime</span>
     </div>
     <svg class="chart" id="chart" preserveAspectRatio="none" role="img" aria-label="AAPL candlestick chart with Donchian channel and 200-day SMA"></svg>
-    <div class="protohint">prototype · sample data</div>
+    <button class="clear-draw" id="clearDraw" style="display:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Clear drawings</button>
+    <div class="protohint">prototype · sample data · trend-line tool snaps to price</div>
   </section>
 
   <!-- right: watchlist + order ticket -->
@@ -296,6 +336,32 @@
       </table>
     </div>
   </section>
+</div>
+
+<div class="modal-bd" id="modal" hidden>
+  <div class="modal" role="dialog" aria-label="Indicators, metrics and strategies">
+    <div class="modal-head">
+      <div class="tabs" role="tablist">
+        <button data-tab="indicators" aria-pressed="true">Indicators</button>
+        <button data-tab="strategies">Strategies</button>
+        <button data-tab="profiles">Profiles</button>
+        <button data-tab="patterns">Patterns</button>
+      </div>
+      <button class="close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div data-panel="indicators">
+        <div class="ind-search"><input id="indSearch" placeholder="Search indicators…" autocomplete="off" /><span class="cnt" id="indCount">0 active</span></div>
+        <div class="ind-list" id="indList"></div>
+      </div>
+      <div data-panel="strategies" hidden><div class="soon">Strategies — coming soon.</div></div>
+      <div data-panel="profiles" hidden><div class="soon">Profiles — coming soon.</div></div>
+      <div data-panel="patterns" hidden>
+        <div class="psub">Chart patterns</div><div class="soon">Coming soon.</div>
+        <div class="psub">Candlestick patterns</div><div class="soon">Coming soon.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"><span class="dot"></span><span id="toast-txt"></span></div>
@@ -417,6 +483,7 @@
     svg.appendChild(el("line",{id:"cx-v",x1:0,y1:PT,x2:0,y2:H-PB,stroke:"#93A0B4","stroke-opacity":0.35,"stroke-dasharray":"3 3",visibility:"hidden"}));
     svg.appendChild(el("line",{id:"cx-h",x1:PL,y1:0,x2:W-PR,y2:0,stroke:"#93A0B4","stroke-opacity":0.35,"stroke-dasharray":"3 3",visibility:"hidden"}));
     setOHLC(last, prev);
+    renderDrawings();
   }
 
   function setOHLC(d,pr){
@@ -494,6 +561,78 @@
     document.querySelectorAll(".wl-row").forEach(function(r){r.classList.remove("active");});
     row.classList.add("active");
   });
+
+  /* ===== drawings: magnet trend-line tool (snaps to a candle's O/H/L/C) ===== */
+  var drawings=[], drawMode=null, pendingAnchor=null, previewAnchor=null;
+  function toView(evt){ var r=svg.getBoundingClientRect(); return {x:(evt.clientX-r.left)/r.width*W, y:(evt.clientY-r.top)/r.height*H}; }
+  function snapAnchor(vx,vy){
+    var i=Math.round((vx-PL)/geo.cw-0.5); i=Math.max(0,Math.min(view.length-1,i));
+    var d=view[i], cands=[d.o,d.h,d.l,d.c], best=d.c, bd=1e9;
+    cands.forEach(function(p){ var dy=Math.abs(Y(p)-vy); if(dy<bd){bd=dy;best=p;} });
+    return {i:i, price:best};
+  }
+  function drawSeg(g,a,b,prev){
+    g.appendChild(el("line",{x1:X(a.i),y1:Y(a.price),x2:X(b.i),y2:Y(b.price),stroke:"#8B78FF","stroke-width":1.8,"stroke-dasharray":prev?"5 4":"","stroke-opacity":prev?0.8:1,"stroke-linecap":"round"}));
+    if(!prev){ [a,b].forEach(function(p){ g.appendChild(el("circle",{cx:X(p.i),cy:Y(p.price),r:3.4,fill:"#8B78FF",stroke:"#0A0E14","stroke-width":1.3})); }); }
+  }
+  function renderDrawings(){
+    var old=document.getElementById("drawings"); if(old&&old.parentNode) old.parentNode.removeChild(old);
+    var g=el("g",{id:"drawings"});
+    drawings.forEach(function(ln){ drawSeg(g,ln.a,ln.b,false); });
+    if(pendingAnchor&&previewAnchor) drawSeg(g,pendingAnchor,previewAnchor,true);
+    if(pendingAnchor) g.appendChild(el("circle",{cx:X(pendingAnchor.i),cy:Y(pendingAnchor.price),r:5,fill:"none",stroke:"#8B78FF","stroke-width":2}));
+    svg.appendChild(g);
+    var cd=document.getElementById("clearDraw"); if(cd) cd.style.display=drawings.length?"inline-flex":"none";
+  }
+  svg.addEventListener("mousemove",function(e){ if(!drawMode)return; var v=toView(e); previewAnchor=snapAnchor(v.x,v.y); if(pendingAnchor) renderDrawings(); });
+  svg.addEventListener("click",function(e){ if(!drawMode)return; var v=toView(e); var s=snapAnchor(v.x,v.y);
+    if(!pendingAnchor){ pendingAnchor=s; } else { drawings.push({a:pendingAnchor,b:s}); pendingAnchor=null; }
+    renderDrawings();
+  });
+  document.querySelectorAll(".rail button").forEach(function(b){ b.addEventListener("click",function(){
+    document.querySelectorAll(".rail button").forEach(function(x){ x.classList.toggle("active",x===b); });
+    drawMode = (b.getAttribute("title")==="Trend line") ? "trend" : null;
+    if(!drawMode) pendingAnchor=null;
+    svg.style.cursor = drawMode ? "crosshair" : "";
+    renderDrawings();
+  }); });
+  document.getElementById("clearDraw").addEventListener("click",function(){ drawings=[]; pendingAnchor=null; renderDrawings(); });
+
+  /* ===== indicators / strategies modal ===== */
+  var INDICATORS=["24-Hour Volume","Accumulation/Distribution","Advance Decline Line","Advance Decline Ratio","Advance/Decline Ratio (Bars)","Arnaud Legoux Moving Average","Aroon","Aroon Oscillator","Auto Fib Extension","Auto Fib Retracement","Auto Key Levels","Auto Pitchfork","Auto Trendlines","Average Daily Range","Average Directional Index","Average True Range","Awesome Oscillator","Balance of Power","BBTrend","Bollinger Bands","Bollinger Bands %b","Bollinger BandWidth","Bollinger Bars","Bull Bear Power","Chaikin Money Flow","Chaikin Oscillator","Chande Kroll Stop","Chande Momentum Oscillator","Chandelier Exit","Chop Zone","Choppiness Index","Commodity Channel Index","Connors RSI","Coppock Curve","Correlation Coefficient","Cumulative Volume Data","Cumulative Volume Index","Donchian Channels","Double EMA","Ease of Movement","Elder Force Index","Envelope","Fisher Transform","Gaps","Historical Volatility","Hull Moving Average","Ichimoku Cloud","Kaufman's Adaptive Moving Average","Keltner Channels","Klinger Oscillator","Know Sure Thing","Least Squares Moving Average","Linear Regression Channel","MA Cross","Mass Index","McGinley Dynamic","Median","Momentum","Money Flow Index","Moon Phases","Moving Average Convergence Divergence","Moving Average Exponential","Moving Average Ribbon","Moving Average Weighted","Multi-Time Period Charts","Negative Volume Index","Net Volume","On Balance Volume","Open Interest","Parabolic SAR","Percentage Price Oscillator","Percentage Volume Oscillator","Performance","Pivot Points High Low","Pivot Points Standard","Positive Volume Index","Price Momentum Oscillator","Price Target","Price Volume Trend","Pring's Special K","Rank Correlation Index","Rate Of Change","RCI Ribbon","Relative Strength Index","Relative Vigor Index","Relative Volatility Index","Relative Volume Index","Relative Volume at Time","Rob Booker - Intraday Pivot Points","Rob Booker - Knoxville Divergence","Rob Booker - Missed Pivot Points","Rob Booker - Reversal","Rob Booker - Ziv Ghost Pivots","RSI Divergence Indicator","Seasonality","Simple Moving Average","SMI Ergodic Indicator","SMI Ergodic Oscillator","Smoothed Moving Average","Stochastic","Stochastic Momentum Index","Stochastic RSI","Supertrend","Technical Ratings","Time Weighted Average Price","Trading Sessions","Trend Strength Index","Triple EMA","TRIX","True Strength Index","Ulcer Index","Ultimate Oscillator","Up/Down Volume","Visible Average Price","Volatility Stop","Volume","Volume Data","Volume Weighted Average Price","Volume Weighted Moving Average","Vortex Indicator","VWAP Auto Anchored","Williams Percentage Range","Woodies CCI","Zig Zag"];
+  var activeInd={}, indActiveCount=0;
+  function renderIndList(filter){
+    var q=(filter||"").toLowerCase();
+    var rows=INDICATORS.filter(function(n){ return n.toLowerCase().indexOf(q)>=0; });
+    document.getElementById("indList").innerHTML = rows.length ? rows.map(function(n){
+      return '<div class="ind-row" data-ind="'+n+'"><span class="nm">'+n+'</span><span class="switch'+(activeInd[n]?" on":"")+'"></span></div>';
+    }).join("") : '<div class="noind">No indicators match.</div>';
+  }
+  function updIndCount(){
+    document.getElementById("indCount").textContent=indActiveCount+" active";
+    var badge=document.getElementById("indBadge");
+    badge.textContent=indActiveCount; badge.style.display=indActiveCount?"block":"none";
+  }
+  document.getElementById("indList").addEventListener("click",function(e){
+    var row=e.target.closest(".ind-row"); if(!row)return;
+    var n=row.getAttribute("data-ind");
+    if(activeInd[n]){ delete activeInd[n]; indActiveCount--; row.querySelector(".switch").classList.remove("on"); }
+    else { activeInd[n]=true; indActiveCount++; row.querySelector(".switch").classList.add("on"); }
+    updIndCount();
+  });
+  document.getElementById("indSearch").addEventListener("input",function(e){ renderIndList(e.target.value); });
+  document.querySelectorAll(".modal .tabs button").forEach(function(b){ b.addEventListener("click",function(){
+    var t=b.getAttribute("data-tab");
+    document.querySelectorAll(".modal .tabs button").forEach(function(x){ x.setAttribute("aria-pressed",String(x===b)); });
+    document.querySelectorAll(".modal-body [data-panel]").forEach(function(p){ p.hidden=p.getAttribute("data-panel")!==t; });
+  }); });
+  function openModal(){ document.getElementById("modal").hidden=false; renderIndList(""); document.getElementById("indSearch").focus(); }
+  function closeModal(){ document.getElementById("modal").hidden=true; }
+  document.getElementById("indicatorsBtn").addEventListener("click",openModal);
+  document.getElementById("modalClose").addEventListener("click",closeModal);
+  document.getElementById("modal").addEventListener("click",function(e){ if(e.target.id==="modal") closeModal(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape"){ pendingAnchor=null; renderDrawings(); if(!document.getElementById("modal").hidden) closeModal(); } });
+  updIndCount();
 
   build(); recalc();
   var t; window.addEventListener("resize",function(){clearTimeout(t);t=setTimeout(build,120);});
